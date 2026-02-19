@@ -1,6 +1,73 @@
 import { useState, useRef, useEffect } from "react";
 import "./App.css";
 
+function TaskCard({ todo, isLong, toggleComplete, deleteTodo }) {
+  const [expanded, setExpanded] = useState(false);
+  const contentRef = useRef(null);
+
+  const toggleExpand = () => {
+    const el = contentRef.current;
+
+    if (!el) return;
+
+    if (!expanded) {
+      // Opening
+      el.style.maxHeight = el.scrollHeight + "px";
+    } else {
+      // Closing
+      el.style.maxHeight = el.scrollHeight + "px";
+      requestAnimationFrame(() => {
+        el.style.maxHeight = "120px";
+      });
+    }
+
+    setExpanded(!expanded);
+  };
+
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+
+    if (expanded) {
+      el.style.maxHeight = el.scrollHeight + "px";
+    } else {
+      el.style.maxHeight = isLong ? "120px" : "none";
+    }
+  }, [expanded, isLong]);
+
+  return (
+    <div className="task-card">
+      <div className="card-content">
+        <div
+          ref={contentRef}
+          className={`text-wrapper ${isLong ? "is-long" : ""}`}
+        >
+          <p
+            className={todo.completed ? "completed" : ""}
+            onClick={() => toggleComplete(todo.id)}
+          >
+            {todo.text}
+          </p>
+        </div>
+
+        {isLong && (
+          <button className="show-more-btn" onClick={toggleExpand}>
+            {expanded ? "Show less" : "Show more"}
+          </button>
+        )}
+      </div>
+
+      <button
+        className="delete-btn"
+        onClick={() => deleteTodo(todo.id)}
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
+
 function App() {
   const [task, setTask] = useState("");
   const [todos, setTodos] = useState([]);
@@ -38,53 +105,64 @@ function App() {
   const completedCount = todos.filter((todo) => todo.completed).length;
 
   return (
-    <div className="container">
-      <h1>Todo List</h1>
+    <>
+      {/* Sticky Header */}
+      <header className="header">
+        <h1>To Do List</h1>
+        <span className="material-symbols-outlined">
+          view_kanban
+        </span>
+      </header>
 
-      <p className="task-counter">
-        {completedCount} / {todos.length} completed
-      </p>
 
-      <div className="input-container">
-        <input
-          ref={inputRef}
-          type="text"
-          value={task}
-          placeholder="Enter a task..."
-          onChange={(e) => setTask(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && addTodo()}
-        />
-        <button onClick={addTodo}>Add</button>
-      </div>
+      {/* Input Section */}
+      <section className="input-section">
+        <div className="input-wrapper">
+          <input
+            ref={inputRef}
+            type="text"
+            value={task}
+            placeholder="Enter a task..."
+            onChange={(e) => setTask(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addTodo()}
+          />
+          <button onClick={addTodo}>Add</button>
+        </div>
+        {/* completed section */}
+        <span className="task-stats">
+          {completedCount} / {todos.length} completed
+        </span>
+      </section>
 
-      <ul>
+
+
+
+      {/* Main Grid */}
+      <main className="task-grid">
         {todos.length === 0 ? (
           <p className="empty-state">No tasks yet 🚀</p>
         ) : (
-          todos.map((todo, index) => (
-            <li key={todo.id}>
-              <span className="todo-number">{index + 1}.</span>
+          todos.map((todo) => {
+            const words = todo.text.trim().split(/\s+/);
+            const isLong = words.length > 50;
 
-              <span
-                className={`todo-text ${todo.completed ? "completed" : ""}`}
-                onClick={() => toggleComplete(todo.id)}
-              >
-                {todo.text}
-              </span>
-
-              <button
-                className="delete-btn"
-                onClick={() => deleteTodo(todo.id)}
-              >
-                ✕
-              </button>
-            </li>
-          ))
+            return (
+              <TaskCard
+                key={todo.id}
+                todo={todo}
+                isLong={isLong}
+                toggleComplete={toggleComplete}
+                deleteTodo={deleteTodo}
+              />
+            );
+          })
         )}
-      </ul>
+      </main>
 
-    </div>
+    </>
   );
+
+
 }
 
 export default App;
